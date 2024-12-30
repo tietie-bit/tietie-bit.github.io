@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品商城</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 頂部區域 -->
+  <header>
+    <div class="header-container">
+      <h1>商品商城</h1>
+      <input type="text" placeholder="輸入關鍵字搜尋商品..." class="search-bar">
+      <button class="search-btn">搜尋</button>
+    </div>
+  </header>
+
+  <!-- 主內容區域 -->
+  <main>
+    <!-- 商品分類 -->
+    <section class="category-section">
+      <h2>依台灣區域分類</h2>
+      <div class="categories">
+        <h3>台灣本島</h3>
+        <button onclick="displayProducts('台北')">台北</button>
+        <button onclick="displayProducts('新北')">新北</button>
+        <button onclick="displayProducts('台中')">台中</button>
+        <button onclick="displayProducts('高雄')">高雄</button>
+        <button onclick="displayProducts('桃園')">桃園</button>
+        <button onclick="displayProducts('台南')">台南</button>
+        <button onclick="displayProducts('基隆')">基隆</button>
+        <button onclick="displayProducts('嘉義')">嘉義</button>
+        <button onclick="displayProducts('宜蘭')">宜蘭</button>
+        <button onclick="displayProducts('苗栗')">苗栗</button>
+        <button onclick="displayProducts('彰化')">彰化</button>
+        <button onclick="displayProducts('南投')">南投</button>
+        <button onclick="displayProducts('雲林')">雲林</button>
+        <button onclick="displayProducts('屏東')">屏東</button>
+        <button onclick="displayProducts('花蓮')">花蓮</button>
+        <button onclick="displayProducts('台東')">台東</button>
+
+        <h3>台灣外島</h3>
+        <button onclick="displayProducts('金門')">金門</button>
+        <button onclick="displayProducts('馬祖')">馬祖</button>
+        <button onclick="displayProducts('澎湖')">澎湖</button>
+        <button onclick="displayProducts('綠島')">綠島</button>
+        <button onclick="displayProducts('蘭嶼')">蘭嶼</button>
+        <button onclick="displayProducts('東引')">東引</button>
+      </div>
+    </section>
+
+    <!-- 新品上市 -->
+    <section class="new-products">
+      <h2>新品上市</h2>
+      <div class="product-list">
+        <!-- 商品卡片範例 -->
+        <div class="product-card">
+          <img src="product1.jpg" alt="商品圖片">
+          <p>名稱：商品名稱</p>
+          <p>產地：台灣</p>
+          <p>所在地：台北</p>
+          <p>內容物：詳細內容</p>
+          <p>售價：$1000</p>
+          <p>所在環境：冷藏</p>
+          <p>加價購：附加商品</p>
+          <p>多購優惠：第二件九折</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 熱門商品 -->
+    <section class="popular-products">
+      <h2>熱門商品</h2>
+      <div class="product-list">
+        <!-- 商品卡片 -->
+        <div class="product-card">
+          <img src="product2.jpg" alt="商品圖片">
+          <p>名稱：熱門商品</p>
+          <p>產地：台灣</p>
+          <p>所在地：高雄</p>
+          <p>內容物：詳細內容</p>
+          <p>售價：$1200</p>
+          <p>所在環境：常溫</p>
+          <p>加價購：附加商品</p>
+          <p>多購優惠：第二件八折</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 聯絡客服 -->
+  <footer>
+    <div class="footer-container">
+      <p>如需下單或詢問，請截圖商品並聯絡我們：</p>
+      <button onclick="window.location.href='https://line.me/'">聯絡客服 (Line)</button>
+      <button onclick="window.location.href='https://telegram.org/'">聯絡客服 (Telegram)</button>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    const products = [
+      { name: "商品名稱1", region: "台北", origin: "台灣", location: "台北", content: "詳細內容", price: "$1000", environment: "冷藏", addOn: "附加商品", discount: "第二件九折" },
+      { name: "商品名稱2", region: "高雄", origin: "台灣", location: "高雄", content: "詳細內容", price: "$1200", environment: "常溫", addOn: "附加商品", discount: "第二件八折" },
+      // 添加更多商品
+    ];
+
+    function displayProducts(region) {
+      const productList = document.querySelector('.product-list');
+      productList.innerHTML = '';
+
+      const filteredProducts = products.filter(product => product.region === region);
+
+      if (filteredProducts.length > 0) {
+        filteredProducts.forEach(product => {
+          const productCard = document.createElement('div');
+          productCard.className = 'product-card';
+          productCard.innerHTML = `
+            <p>名稱：${product.name}</p>
+            <p>產地：${product.origin}</p>
+            <p>所在地：${product.location}</p>
+            <p>內容物：${product.content}</p>
+            <p>售價：${product.price}</p>
+            <p>所在環境：${product.environment}</p>
+            <p>加價購：${product.addOn}</p>
+            <p>多購優惠：${product.discount}</p>
+          `;
+          productList.appendChild(productCard);
+        });
+      } else {
+        productList.innerHTML = '<p>該地區目前沒有商品。</p>';
+      }
+    }
+  </script>
+</body>
+</html>
