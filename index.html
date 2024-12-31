@@ -5,30 +5,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>商品商城</title>
   <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 頂部區域 -->
+  <header>
+    <div class="header-container">
+      <h1>商品商城</h1>
+      <input type="text" placeholder="輸入關鍵字搜尋商品..." class="search-bar">
+      <button class="search-btn">搜尋</button>
+      <button onclick="signIn()">登入</button>
+      <button onclick="signOut()">登出</button>
+    </div>
+  </header>
+
+  <!-- 新增商品 -->
+  <section class="add-product">
+    <h2>新增商品</h2>
+    <form id="productForm">
+      <input type="text" id="productName" placeholder="商品名稱" required>
+      <input type="text" id="productRegion" placeholder="所在地" required>
+      <input type="text" id="productOrigin" placeholder="產地" required>
+      <input type="file" id="productImage" required>
+      <textarea id="productDescription" placeholder="商品描述" required></textarea>
+      <input type="number" id="productPrice" placeholder="售價" required>
+      <button type="submit">新增商品</button>
+    </form>
+  </section>
+
+  <footer>
+    <div class="footer-container">
+      <p>如需下單或詢問，請聯絡我們：</p>
+      <button onclick="window.location.href='https://line.me/'">聯絡客服 (Line)</button>
+      <button onclick="window.location.href='https://telegram.org/'">聯絡客服 (Telegram)</button>
+    </div>
+  </footer>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
 
   <script>
     // Firebase 配置
     const firebaseConfig = {
-      apiKey: "你的API密鑰",
-      authDomain: "你的專案ID.firebaseapp.com",
-      projectId: "你的專案ID",
-      storageBucket: "你的專案ID.appspot.com",
-      messagingSenderId: "你的發送者ID",
-      appId: "你的應用ID"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     // 初始化 Firebase
     const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
 
-    // 儲存商品資料到 Firebase
-    function addProductToFirebase(name, region, origin, location, content, price, environment, addOn, discount, imageFile) {
+    // 登入函數
+    function signIn() {
+      const email = prompt("qaz09301005@gmail.com
+：");
+      const password = prompt("FF20240307：");
+
+      auth.signInWithEmailAndPassword(email, password).then((userCredential) => {
+        console.log("登入成功！", userCredential.user);
+      }).catch((error) => {
+        console.error("登入失敗：", error);
+      });
+    }
+
+    // 登出函數
+    function signOut() {
+      auth.signOut().then(() => {
+        console.log("登出成功！");
+      }).catch((error) => {
+        console.error("登出失敗：", error);
+      });
+    }
+
+    // 處理商品新增
+    document.getElementById('productForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      if (!auth.currentUser) {
+        alert("請先登入才能新增商品！");
+        return;
+      }
+
+      const name = document.getElementById('productName').value;
+      const region = document.getElementById('productRegion').value;
+      const origin = document.getElementById('productOrigin').value;
+      const description = document.getElementById('productDescription').value;
+      const price = document.getElementById('productPrice').value;
+      const imageFile = document.getElementById('productImage').files[0];
+
       // 上傳圖片到 Firebase Storage
       const storageRef = storage.ref('products/' + imageFile.name);
       storageRef.put(imageFile).then((snapshot) => {
@@ -38,180 +110,20 @@
             name: name,
             region: region,
             origin: origin,
-            location: location,
-            content: content,
+            description: description,
             price: price,
-            environment: environment,
-            addOn: addOn,
-            discount: discount,
-            imageUrl: downloadURL
+            imageUrl: downloadURL,
+            userId: auth.currentUser.uid  // 記錄該商品是由哪個使用者新增的
           }).then(() => {
-            console.log("商品新增成功！");
+            alert("商品新增成功！");
+            document.getElementById('productForm').reset(); // 清空表單
           }).catch((error) => {
             console.error("商品新增失敗：", error);
           });
         });
       });
-    }
-
-    // 顯示 Firebase 中的商品
-    function displayProducts(region) {
-      const productList = document.querySelector('.product-list');
-      productList.innerHTML = '';
-
-      db.collection("products").where("region", "==", region).get().then((querySnapshot) => {
-        if (querySnapshot.empty) {
-          productList.innerHTML = '<p>該地區目前沒有商品。</p>';
-        } else {
-          querySnapshot.forEach((doc) => {
-            const product = doc.data();
-            const productCard = document.createElement('div');
-            productCard.className = 'product-card';
-            productCard.innerHTML = `
-              <img src="${product.imageUrl}" alt="${product.name}">
-              <p>名稱：${product.name}</p>
-              <p>產地：${product.origin}</p>
-              <p>所在地：${product.location}</p>
-              <p>內容物：${product.content}</p>
-              <p>售價：${product.price}</p>
-              <p>所在環境：${product.environment}</p>
-              <p>加價購：${product.addOn}</p>
-              <p>多購優惠：${product.discount}</p>
-            `;
-            productList.appendChild(productCard);
-          });
-        }
-      }).catch((error) => {
-        console.error("讀取商品失敗：", error);
-      });
-    }
-  </script>
-</head>
-<body>
-  <!-- 頂部區域 -->
-  <header>
-    <div class="header-container">
-      <h1>商品商城</h1>
-      <input type="text" placeholder="輸入關鍵字搜尋商品..." class="search-bar">
-      <button class="search-btn">搜尋</button>
-    </div>
-  </header>
-
-  <!-- 主內容區域 -->
-  <main>
-    <!-- 商品分類 -->
-    <section class="category-section">
-      <h2>依台灣區域分類</h2>
-      <div class="categories">
-        <h3>台灣本島</h3>
-        <button onclick="displayProducts('台北')">台北</button>
-        <button onclick="displayProducts('新北')">新北</button>
-        <button onclick="displayProducts('台中')">台中</button>
-        <button onclick="displayProducts('高雄')">高雄</button>
-        <button onclick="displayProducts('桃園')">桃園</button>
-        <button onclick="displayProducts('台南')">台南</button>
-        <button onclick="displayProducts('基隆')">基隆</button>
-        <button onclick="displayProducts('嘉義')">嘉義</button>
-        <button onclick="displayProducts('宜蘭')">宜蘭</button>
-        <button onclick="displayProducts('苗栗')">苗栗</button>
-        <button onclick="displayProducts('彰化')">彰化</button>
-        <button onclick="displayProducts('南投')">南投</button>
-        <button onclick="displayProducts('雲林')">雲林</button>
-        <button onclick="displayProducts('屏東')">屏東</button>
-        <button onclick="displayProducts('花蓮')">花蓮</button>
-        <button onclick="displayProducts('台東')">台東</button>
-
-        <h3>台灣外島</h3>
-        <button onclick="displayProducts('金門')">金門</button>
-        <button onclick="displayProducts('馬祖')">馬祖</button>
-        <button onclick="displayProducts('澎湖')">澎湖</button>
-        <button onclick="displayProducts('綠島')">綠島</button>
-        <button onclick="displayProducts('蘭嶼')">蘭嶼</button>
-        <button onclick="displayProducts('東引')">東引</button>
-      </div>
-    </section>
-
-    <!-- 新品上市 -->
-    <section class="new-products">
-      <h2>新品上市</h2>
-      <div class="product-list">
-        <!-- 商品卡片範例 -->
-        <div class="product-card">
-          <img src="product1.jpg" alt="商品圖片">
-          <p>名稱：商品名稱</p>
-          <p>產地：台灣</p>
-          <p>所在地：台北</p>
-          <p>內容物：詳細內容</p>
-          <p>售價：$1000</p>
-          <p>所在環境：冷藏</p>
-          <p>加價購：附加商品</p>
-          <p>多購優惠：第二件九折</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 熱門商品 -->
-    <section class="popular-products">
-      <h2>熱門商品</h2>
-      <div class="product-list">
-        <!-- 商品卡片 -->
-        <div class="product-card">
-          <img src="product2.jpg" alt="商品圖片">
-          <p>名稱：熱門商品</p>
-          <p>產地：台灣</p>
-          <p>所在地：高雄</p>
-          <p>內容物：詳細內容</p>
-          <p>售價：$1200</p>
-          <p>所在環境：常溫</p>
-          <p>加價購：附加商品</p>
-          <p>多購優惠：第二件八折</p>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- 商品上架表單 -->
-  <section class="add-product-form">
-    <h2>上架商品</h2>
-    <input type="text" id="product-name" placeholder="商品名稱">
-    <input type="text" id="product-region" placeholder="地區">
-    <input type="text" id="product-origin" placeholder="產地">
-    <input type="text" id="product-location" placeholder="所在地">
-    <textarea id="product-content" placeholder="內容物"></textarea>
-    <input type="number" id="product-price" placeholder="售價">
-    <input type="text" id="product-environment" placeholder="保存環境">
-    <input type="text" id="product-add-on" placeholder="加價購">
-    <input type="text" id="product-discount" placeholder="優惠折扣">
-    <input type="file" id="product-image">
-    <button id="submit-button">新增商品</button>
-  </section>
-
-  <!-- 聯絡客服 -->
-  <footer>
-    <div class="footer-container">
-      <p>如需下單或詢問，請截圖商品並聯絡我們：</p>
-      <button onclick="window.location.href='https://line.me/'">聯絡客服 (Line)</button>
-      <button onclick="window.location.href='https://telegram.org/'">聯絡客服 (Telegram)</button>
-    </div>
-  </footer>
-
-  <!-- JavaScript -->
-  <script>
-    // 新增商品按鈕事件
-    document.getElementById("submit-button").addEventListener("click", () => {
-      const name = document.getElementById("product-name").value;
-      const region = document.getElementById("product-region").value;
-      const origin = document.getElementById("product-origin").value;
-      const location = document.getElementById("product-location").value;
-      const content = document.getElementById("product-content").value;
-      const price = document.getElementById("product-price").value;
-      const environment = document.getElementById("product-environment").value;
-      const addOn = document.getElementById("product-add-on").value;
-      const discount = document.getElementById("product-discount").value;
-      const imageFile = document.getElementById("product-image").files[0];
-
-      addProductToFirebase(name, region, origin, location, content, price, environment, addOn, discount, imageFile);
     });
   </script>
 </body>
 </html>
+
