@@ -5,6 +5,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>商品商城</title>
   <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js"></script>
+
+  <script>
+    // Firebase 配置
+    const firebaseConfig = {
+      apiKey: "你的API密鑰",
+      authDomain: "你的專案ID.firebaseapp.com",
+      projectId: "你的專案ID",
+      storageBucket: "你的專案ID.appspot.com",
+      messagingSenderId: "你的發送者ID",
+      appId: "你的應用ID"
+    };
+
+    // 初始化 Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // 儲存商品資料到 Firebase
+    function addProductToFirebase(name, region, origin, location, content, price, environment, addOn, discount, imageFile) {
+      // 上傳圖片到 Firebase Storage
+      const storageRef = storage.ref('products/' + imageFile.name);
+      storageRef.put(imageFile).then((snapshot) => {
+        snapshot.ref.getDownloadURL().then((downloadURL) => {
+          // 儲存商品資料到 Firestore
+          db.collection("products").add({
+            name: name,
+            region: region,
+            origin: origin,
+            location: location,
+            content: content,
+            price: price,
+            environment: environment,
+            addOn: addOn,
+            discount: discount,
+            imageUrl: downloadURL
+          }).then(() => {
+            console.log("商品新增成功！");
+          }).catch((error) => {
+            console.error("商品新增失敗：", error);
+          });
+        });
+      });
+    }
+
+    // 顯示 Firebase 中的商品
+    function displayProducts(region) {
+      const productList = document.querySelector('.product-list');
+      productList.innerHTML = '';
+
+      db.collection("products").where("region", "==", region).get().then((querySnapshot) => {
+        if (querySnapshot.empty) {
+          productList.innerHTML = '<p>該地區目前沒有商品。</p>';
+        } else {
+          querySnapshot.forEach((doc) => {
+            const product = doc.data();
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.innerHTML = `
+              <img src="${product.imageUrl}" alt="${product.name}">
+              <p>名稱：${product.name}</p>
+              <p>產地：${product.origin}</p>
+              <p>所在地：${product.location}</p>
+              <p>內容物：${product.content}</p>
+              <p>售價：${product.price}</p>
+              <p>所在環境：${product.environment}</p>
+              <p>加價購：${product.addOn}</p>
+              <p>多購優惠：${product.discount}</p>
+            `;
+            productList.appendChild(productCard);
+          });
+        }
+      }).catch((error) => {
+        console.error("讀取商品失敗：", error);
+      });
+    }
+  </script>
 </head>
 <body>
   <!-- 頂部區域 -->
@@ -89,6 +170,22 @@
     </section>
   </main>
 
+  <!-- 商品上架表單 -->
+  <section class="add-product-form">
+    <h2>上架商品</h2>
+    <input type="text" id="product-name" placeholder="商品名稱">
+    <input type="text" id="product-region" placeholder="地區">
+    <input type="text" id="product-origin" placeholder="產地">
+    <input type="text" id="product-location" placeholder="所在地">
+    <textarea id="product-content" placeholder="內容物"></textarea>
+    <input type="number" id="product-price" placeholder="售價">
+    <input type="text" id="product-environment" placeholder="保存環境">
+    <input type="text" id="product-add-on" placeholder="加價購">
+    <input type="text" id="product-discount" placeholder="優惠折扣">
+    <input type="file" id="product-image">
+    <button id="submit-button">新增商品</button>
+  </section>
+
   <!-- 聯絡客服 -->
   <footer>
     <div class="footer-container">
@@ -100,41 +197,21 @@
 
   <!-- JavaScript -->
   <script>
-    const products = [
-      { name: "商品名稱1", region: "台北", origin: "台灣", location: "台北", content: "詳細內容", price: "$1000", environment: "冷藏", addOn: "附加商品", discount: "第二件九折" },
-      { name: "商品名稱2", region: "高雄", origin: "台灣", location: "高雄", content: "詳細內容", price: "$1200", environment: "常溫", addOn: "附加商品", discount: "第二件八折" },
-      { name: "商品名稱3", region: "台南", origin: "台灣", location: "台南", content: "高品質商品", price: "$1500", environment: "冷藏", addOn: "贈品", discount: "買三送一" },
-      { name: "商品名稱4", region: "金門", origin: "台灣", location: "金門", content: "特色小吃", price: "$800", environment: "常溫", addOn: "優惠券", discount: "第二件八折" },
-      { name: "商品名稱5", region: "花蓮", origin: "台灣", location: "花蓮", content: "天然農產品", price: "$500", environment: "冷凍", addOn: "免費包裝", discount: "買五送一" },
-      // 添加更多商品
-    ];
+    // 新增商品按鈕事件
+    document.getElementById("submit-button").addEventListener("click", () => {
+      const name = document.getElementById("product-name").value;
+      const region = document.getElementById("product-region").value;
+      const origin = document.getElementById("product-origin").value;
+      const location = document.getElementById("product-location").value;
+      const content = document.getElementById("product-content").value;
+      const price = document.getElementById("product-price").value;
+      const environment = document.getElementById("product-environment").value;
+      const addOn = document.getElementById("product-add-on").value;
+      const discount = document.getElementById("product-discount").value;
+      const imageFile = document.getElementById("product-image").files[0];
 
-    function displayProducts(region) {
-      const productList = document.querySelector('.product-list');
-      productList.innerHTML = '';
-
-      const filteredProducts = products.filter(product => product.region === region);
-
-      if (filteredProducts.length > 0) {
-        filteredProducts.forEach(product => {
-          const productCard = document.createElement('div');
-          productCard.className = 'product-card';
-          productCard.innerHTML = `
-            <p>名稱：${product.name}</p>
-            <p>產地：${product.origin}</p>
-            <p>所在地：${product.location}</p>
-            <p>內容物：${product.content}</p>
-            <p>售價：${product.price}</p>
-            <p>所在環境：${product.environment}</p>
-            <p>加價購：${product.addOn}</p>
-            <p>多購優惠：${product.discount}</p>
-          `;
-          productList.appendChild(productCard);
-        });
-      } else {
-        productList.innerHTML = '<p>該地區目前沒有商品。</p>';
-      }
-    }
+      addProductToFirebase(name, region, origin, location, content, price, environment, addOn, discount, imageFile);
+    });
   </script>
 </body>
 </html>
